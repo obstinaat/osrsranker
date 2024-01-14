@@ -1,21 +1,16 @@
-use std::env;
 use reqwest;
 use reqwest::Error;
 use tokio;
+use std::fs::File;
+use std::io::Read;
+use serde_json;
+use serde::Deserialize;
 
 const URL_BASE: &str = "https://secure.runescape.com/m=hiscore_oldschool/index_lite.ws?player=";
-
-
 
 //Weights are subject to change; preferably configurable for each different entry, with custom milestones and custom point counts
 //additionally it would be nice if milestones after level 99 were implemented, such as 25m xp. 
 //by current weights a maxed player will have 3950 points from skills.
-
-//Milestones: level 50, 60, 70, 75, 80, 85, 90, 92 ,95, 99.
-const SKILL_MILESTONES: [isize; 10] = [10133, 273742, 737627, 1210421, 1986068, 3258594, 5346332, 6517253, 8771558, 13034431];
-const EASY_SKILL: [isize; 10] = [1, 1, 2, 3, 5, 7, 10, 10, 15, 25];
-const MEDIUM_SKILL: [isize; 10] = [2, 2, 4, 6, 10, 14, 20, 20, 30, 50];
-const HARD_SKILL: [isize; 10] = [4, 4, 8, 12, 20, 28, 40, 40, 60, 100];
 
 #[derive(Debug)]
 #[allow(dead_code)]
@@ -240,6 +235,118 @@ struct PointsFromPVM{
     zulrah: isize,
 }
 
+#[derive(Debug, Deserialize)]
+#[allow(dead_code)]
+struct AppConfig {
+    //
+    // SKILLS
+    //
+    attack: Vec<(isize, isize)>,
+    defence: Vec<(isize, isize)>,
+    strength: Vec<(isize, isize)>,
+    hitpoints: Vec<(isize, isize)>,
+    ranged: Vec<(isize, isize)>,
+    prayer: Vec<(isize, isize)>,
+    magic: Vec<(isize, isize)>,
+    cooking: Vec<(isize, isize)>,
+    woodcutting: Vec<(isize, isize)>,
+    fletching: Vec<(isize, isize)>,
+    fishing: Vec<(isize, isize)>,
+    firemaking: Vec<(isize, isize)>,
+    crafting: Vec<(isize, isize)>,
+    smithing: Vec<(isize, isize)>,
+    mining: Vec<(isize, isize)>,
+    herblore: Vec<(isize, isize)>,
+    agility: Vec<(isize, isize)>,
+    thieving: Vec<(isize, isize)>,
+    slayer: Vec<(isize, isize)>,
+    farming: Vec<(isize, isize)>,
+    runecrafting: Vec<(isize, isize)>,
+    hunter: Vec<(isize, isize)>,
+    construction: Vec<(isize, isize)>,
+    //
+    // ACTIVITIES
+    //
+    league_points: Vec<(isize, isize)>,
+    deadman_points: Vec<(isize, isize)>,
+    bounty_hunter_hunter: Vec<(isize, isize)>,
+    bounty_hunter_rogue: Vec<(isize, isize)>,
+    bounty_hunter_legacy_hunter: Vec<(isize, isize)>,
+    bounty_hunter_legacy_rogue: Vec<(isize, isize)>,
+    clue_scrolls_all: Vec<(isize, isize)>,
+    clue_scrolls_beginner: Vec<(isize, isize)>,
+    clue_scrolls_easy: Vec<(isize, isize)>,
+    clue_scrolls_medium: Vec<(isize, isize)>,
+    clue_scrolls_hard: Vec<(isize, isize)>,
+    clue_scrolls_elite: Vec<(isize, isize)>,
+    clue_scrolls_master: Vec<(isize, isize)>,
+    lms_ranked: Vec<(isize, isize)>,
+    pvp_arena: Vec<(isize, isize)>,
+    soul_wars_zeal: Vec<(isize, isize)>,
+    gotr_rifts: Vec<(isize, isize)>,
+    //
+    //PVM
+    //
+    abyssal_sire: Vec<(isize, isize)>,
+    alchemical_hydra: Vec<(isize, isize)>,
+    artio: Vec<(isize, isize)>,
+    barrows: Vec<(isize, isize)>,
+    bryophyta: Vec<(isize, isize)>,
+    callisto: Vec<(isize, isize)>,
+    calvarion: Vec<(isize, isize)>,
+    cerberus: Vec<(isize, isize)>,
+    cox: Vec<(isize, isize)>,
+    cox_cm: Vec<(isize, isize)>,
+    chaos_elemental: Vec<(isize, isize)>,
+    chaos_fanatic: Vec<(isize, isize)>,
+    commander_zilyana:Vec<(isize, isize)>,
+    corporeal_beast: Vec<(isize, isize)>,
+    crazy_archeologist: Vec<(isize, isize)>,
+    dagannoth_prime: Vec<(isize, isize)>,
+    dagannoth_rex: Vec<(isize, isize)>,
+    dagannoth_supreme: Vec<(isize, isize)>,
+    deranged_archaeologist: Vec<(isize, isize)>,
+    duke_sucellus: Vec<(isize, isize)>,
+    general_graardor: Vec<(isize, isize)>,
+    giant_mole: Vec<(isize, isize)>,
+    grotesque_guardians: Vec<(isize, isize)>,
+    hespori: Vec<(isize, isize)>,
+    kalphite_queen: Vec<(isize, isize)>,
+    king_black_dragon: Vec<(isize, isize)>,
+    kraken: Vec<(isize, isize)>,
+    kreearra: Vec<(isize, isize)>,
+    kril_tsutsaroth: Vec<(isize, isize)>,
+    mimic: Vec<(isize, isize)>,
+    nex: Vec<(isize, isize)>,
+    nightmare: Vec<(isize, isize)>,
+    phosani_nightmare: Vec<(isize, isize)>,
+    obor: Vec<(isize, isize)>,
+    phantom_muspah: Vec<(isize, isize)>,
+    sarachnis: Vec<(isize, isize)>,
+    scorpia: Vec<(isize, isize)>,
+    skotizo: Vec<(isize, isize)>,
+    spindel: Vec<(isize, isize)>,
+    tempoross: Vec<(isize, isize)>,
+    gauntlet: Vec<(isize, isize)>,
+    corrupted_gauntlet: Vec<(isize, isize)>,
+    leviathan: Vec<(isize, isize)>,
+    whisperer: Vec<(isize, isize)>,
+    tob: Vec<(isize, isize)>,
+    tob_hard_mode: Vec<(isize, isize)>,
+    thermy: Vec<(isize, isize)>,
+    toa: Vec<(isize, isize)>,
+    toa_expert_mode: Vec<(isize, isize)>,
+    tzkal_zuk: Vec<(isize, isize)>,
+    tztok_jad: Vec<(isize, isize)>,
+    vardorvis: Vec<(isize, isize)>,
+    venenatis: Vec<(isize, isize)>,
+    vetion: Vec<(isize, isize)>,
+    vorkath: Vec<(isize, isize)>,
+    wintertodt: Vec<(isize, isize)>,
+    zalcano: Vec<(isize, isize)>,
+    zulrah: Vec<(isize, isize)>,
+}
+
 async fn get_hiscores(username: &str) -> Result<String, Error> {
     let url = String::from(URL_BASE) + username;
 
@@ -249,69 +356,42 @@ async fn get_hiscores(username: &str) -> Result<String, Error> {
     Ok(body)
 }
 
-fn get_points_easy_skill(experience: isize) -> isize{
-    let mut points: isize = 0;
-    for (i, milestone) in SKILL_MILESTONES.iter().enumerate(){
-        if experience < *milestone {
-            return points
+fn calc_points(score: isize, milestones: &Vec<(isize, isize)>) -> isize {
+    let mut points = 0;
+    for (requirement, reward) in milestones{
+        if score < *requirement{
+            return points;
         }
-        points += EASY_SKILL[i];
+        points += reward;
     }
     points
 }
 
-fn get_points_medium_skill(experience: isize) -> isize{
-    let mut points: isize = 0;
-    for (i, milestone) in SKILL_MILESTONES.iter().enumerate(){
-        if experience < *milestone {
-            return points
-        }
-        points += MEDIUM_SKILL[i];
-    }
-    points
-}
-
-fn get_points_hard_skill(experience: isize) -> isize{
-    let mut points: isize = 0;
-    for (i, milestone) in SKILL_MILESTONES.iter().enumerate(){
-        if experience < *milestone {
-            return points
-        }
-        points += HARD_SKILL[i];
-    }
-    points
-}
-
-fn get_points_from_skills(playerdata: &ParsedHiScoresData) -> PointsFromSkills{
+fn get_points_from_skills(playerdata: &ParsedHiScoresData, config: &AppConfig) -> PointsFromSkills{
     //EASY SKILLS
-    let attack = get_points_easy_skill(playerdata.attack);
-    let defence = get_points_easy_skill(playerdata.defence);
-    let strength = get_points_easy_skill(playerdata.strength);
-    let hitpoints = get_points_easy_skill(playerdata.hitpoints);
-    let ranged = get_points_easy_skill(playerdata.ranged);
-    let cooking = get_points_easy_skill(playerdata.cooking);
-    let woodcutting = get_points_easy_skill(playerdata.woodcutting);
-    let firemaking = get_points_easy_skill(playerdata.firemaking);
-    let thieving = get_points_easy_skill(playerdata.thieving);
-    let hunter = get_points_easy_skill(playerdata.hunter);
-
-
-    //MEDIUM SKILLS
-    let magic = get_points_medium_skill(playerdata.magic);
-    let fletching = get_points_medium_skill(playerdata.fletching);
-    let fishing = get_points_medium_skill(playerdata.fishing);
-    let crafting = get_points_medium_skill(playerdata.crafting);
-    let smithing = get_points_medium_skill(playerdata.smithing);
-    let farming = get_points_medium_skill(playerdata.farming);
-
-    //HARD SKILLS
-    let prayer = get_points_hard_skill(playerdata.prayer);
-    let mining = get_points_hard_skill(playerdata.mining);
-    let herblore = get_points_hard_skill(playerdata.herblore);
-    let agility = get_points_hard_skill(playerdata.agility);
-    let slayer = get_points_hard_skill(playerdata.slayer);
-    let runecrafting = get_points_hard_skill(playerdata.runecrafting);
-    let construction = get_points_hard_skill(playerdata.construction);
+    let attack = calc_points(playerdata.attack, &config.attack);
+    let defence = calc_points(playerdata.defence, &config.defence);
+    let strength = calc_points(playerdata.strength, &config.strength);
+    let hitpoints = calc_points(playerdata.hitpoints, &config.hitpoints);
+    let ranged = calc_points(playerdata.ranged, &config.ranged);
+    let prayer = calc_points(playerdata.prayer, &config.prayer);
+    let magic = calc_points(playerdata.magic, &config.magic);
+    let cooking = calc_points(playerdata.cooking, &config.cooking);
+    let woodcutting = calc_points(playerdata.woodcutting, &config.woodcutting);
+    let fletching = calc_points(playerdata.fletching, &config.fletching);
+    let fishing = calc_points(playerdata.fishing, &config.fishing);
+    let firemaking = calc_points(playerdata.firemaking, &config.firemaking);
+    let crafting = calc_points(playerdata.crafting, &config.crafting);
+    let smithing = calc_points(playerdata.smithing, &config.smithing);
+    let mining = calc_points(playerdata.mining, &config.mining);
+    let herblore = calc_points(playerdata.herblore, &config.herblore);
+    let agility = calc_points(playerdata.agility, &config.agility);
+    let thieving = calc_points(playerdata.thieving, &config.thieving);
+    let slayer = calc_points(playerdata.slayer, &config.slayer);
+    let farming = calc_points(playerdata.farming, &config.farming);
+    let runecrafting = calc_points(playerdata.runecrafting, &config.runecrafting);
+    let hunter = calc_points(playerdata.hunter, &config.hunter);
+    let construction = calc_points(playerdata.construction, &config.construction);
     
     let total = attack + defence + strength + hitpoints + ranged + cooking +
     woodcutting + firemaking + thieving + hunter + magic + fletching + fishing + 
@@ -346,24 +426,25 @@ fn get_points_from_skills(playerdata: &ParsedHiScoresData) -> PointsFromSkills{
     }
 }
 
-fn get_points_from_activities(playerdata: &ParsedHiScoresData) -> PointsFromActivities{
-    let league_points = 0;
-    let deadman_points = 0;
-    let bounty_hunter_hunter = 0;
-    let bounty_hunter_rogue = 0;
-    let bounty_hunter_legacy_hunter = 0;
-    let bounty_hunter_legacy_rogue = 0;
-    let clue_scrolls_beginner = (playerdata.clue_scrolls_beginner as f64 * 0.05).floor() as isize;
-    let clue_scrolls_easy = (playerdata.clue_scrolls_easy as f64 * 0.05).floor() as isize;
-    let clue_scrolls_medium = (playerdata.clue_scrolls_medium as f64 * 0.1).floor() as isize;
-    let clue_scrolls_hard = (playerdata.clue_scrolls_hard as f64 * 0.2).floor() as isize;
-    let clue_scrolls_elite = (playerdata.clue_scrolls_elite as f64 * 0.25).floor() as isize;
-    let clue_scrolls_master = (playerdata.clue_scrolls_master as f64 * 0.5).floor() as isize;
-    let clue_scrolls_all = 0; // no additional need to give more points.
-    let lms_ranked = 0;
-    let pvp_arena = 0;
-    let soul_wars_zeal = 0;
-    let gotr_rifts = (playerdata.gotr_rifts as f64 * 0.2).floor() as isize;
+fn get_points_from_activities(playerdata: &ParsedHiScoresData, config: &AppConfig) -> PointsFromActivities{
+    let league_points = calc_points(playerdata.league_points, &config.league_points);
+    let deadman_points = calc_points(playerdata.deadman_points, &config.deadman_points);
+    let bounty_hunter_hunter = calc_points(playerdata.bounty_hunter_hunter, &config.bounty_hunter_hunter);
+    let bounty_hunter_rogue = calc_points(playerdata.bounty_hunter_rogue, &config.bounty_hunter_rogue);
+    let bounty_hunter_legacy_hunter = calc_points(playerdata.bounty_hunter_legacy_hunter, &config.bounty_hunter_legacy_hunter);
+    let bounty_hunter_legacy_rogue = calc_points(playerdata.bounty_hunter_legacy_rogue, &config.bounty_hunter_legacy_rogue);
+    let clue_scrolls_all = calc_points(playerdata.clue_scrolls_all, &config.clue_scrolls_all);
+    let clue_scrolls_beginner = calc_points(playerdata.clue_scrolls_beginner, &config.clue_scrolls_beginner);
+    let clue_scrolls_easy = calc_points(playerdata.clue_scrolls_easy, &config.clue_scrolls_easy);
+    let clue_scrolls_medium = calc_points(playerdata.clue_scrolls_medium, &config.clue_scrolls_medium);
+    let clue_scrolls_hard = calc_points(playerdata.clue_scrolls_hard, &config.clue_scrolls_hard);
+    let clue_scrolls_elite = calc_points(playerdata.clue_scrolls_elite, &config.clue_scrolls_elite);
+    let clue_scrolls_master = calc_points(playerdata.clue_scrolls_master, &config.clue_scrolls_master);
+    let lms_ranked = calc_points(playerdata.lms_ranked, &config.lms_ranked);
+    let pvp_arena = calc_points(playerdata.pvp_arena, &config.pvp_arena);
+    let soul_wars_zeal = calc_points(playerdata.soul_wars_zeal, &config.soul_wars_zeal);
+    let gotr_rifts = calc_points(playerdata.gotr_rifts, &config.gotr_rifts);
+
     let total = league_points + deadman_points + bounty_hunter_hunter + bounty_hunter_rogue + bounty_hunter_legacy_hunter +
      bounty_hunter_legacy_rogue + clue_scrolls_all + clue_scrolls_beginner + clue_scrolls_easy + clue_scrolls_medium +
       clue_scrolls_hard + clue_scrolls_elite + clue_scrolls_master + lms_ranked + pvp_arena + soul_wars_zeal + gotr_rifts;
@@ -391,68 +472,67 @@ fn get_points_from_activities(playerdata: &ParsedHiScoresData) -> PointsFromActi
     }
 }
 
-fn get_points_from_pvm(playerdata: &ParsedHiScoresData) -> PointsFromPVM{
-    let abyssal_sire = (playerdata.abyssal_sire as f64 * 1 as f64/45 as f64).floor() as isize;
-    let alchemical_hydra = (playerdata.alchemical_hydra as f64 * 1 as f64/33 as f64).floor() as isize;
-    let artio = (playerdata.artio as f64 * 1 as f64/65 as f64).floor() as isize;
-    let barrows = (playerdata.barrows as f64 * 1 as f64/20 as f64).floor() as isize;
-    let bryophyta = (playerdata.bryophyta as f64 * 1 as f64/5 as f64).floor() as isize;
-    let callisto = (playerdata.callisto as f64 * 1 as f64/85 as f64).floor() as isize;
-    let calvarion = (playerdata.calvarion as f64 * 1 as f64/55 as f64).floor() as isize;
-    let cerberus = (playerdata.cerberus as f64 * 1 as f64/61 as f64).floor() as isize;
-    let cox = (playerdata.cox as f64 * 1 as f64/3 as f64).floor() as isize;
-    let cox_cm = (playerdata.cox_cm as f64 * 1 as f64/2.4 as f64).floor() as isize;
-    let chaos_elemental = (playerdata.chaos_elemental as f64 * 1 as f64/60 as f64).floor() as isize;
-    let chaos_fanatic = (playerdata.chaos_fanatic as f64 * 1 as f64/100 as f64).floor() as isize;
-    let commander_zilyan = (playerdata.commander_zilyana as f64 * 1 as f64/55 as f64).floor() as isize;
-    let corporeal_beast = (playerdata.corporeal_beast as f64 * 1 as f64/60 as f64).floor() as isize;
-    let crazy_archeologist = (playerdata.crazy_archeologist as f64 * 1 as f64/60 as f64).floor() as isize;
-    let dagannoth_prime = (playerdata.dagannoth_prime as f64 * 1 as f64/100 as f64).floor() as isize;
-    let dagannoth_rex = (playerdata.dagannoth_rex as f64 * 1 as f64/100 as f64).floor() as isize;
-    let dagannoth_supreme = (playerdata.dagannoth_supreme as f64 * 1 as f64/100 as f64).floor() as isize;
-    let deranged_archaeologist = (playerdata.deranged_archaeologist as f64 * 1 as f64/100 as f64).floor() as isize;
-    let duke_sucellus = (playerdata.duke_sucellus as f64 * 1 as f64/24 as f64).floor() as isize;
-    let general_graardor = (playerdata.general_graardor as f64 * 1 as f64/55 as f64).floor() as isize;
-    let giant_mole = (playerdata.giant_mole as f64 * 1 as f64/100 as f64).floor() as isize;
-    let grotesque_guardians = (playerdata.grotesque_guardians as f64 * 1 as f64/36 as f64).floor() as isize;
-    let hespori = (playerdata.hespori as f64 * 0.5).floor() as isize;
-    let kalphite_queen = (playerdata.kalphite_queen as f64 * 1 as f64/50 as f64).floor() as isize;
-    let king_black_dragon = (playerdata.king_black_dragon as f64 * 1 as f64/120 as f64).floor() as isize;
-    let kraken = (playerdata.kraken as f64 * 1 as f64/100 as f64).floor() as isize;
-    let kreearra = (playerdata.kreearra as f64 * 1 as f64/40 as f64).floor() as isize;
-    let kril_tsutsaroth = (playerdata.kril_tsutsaroth as f64 * 1 as f64/65 as f64).floor() as isize;
-    let mimic = (playerdata.mimic as f64 * 1 as f64/3 as f64).floor() as isize;
-    let nex = (playerdata.nex as f64 * 1 as f64/13 as f64).floor() as isize;
-    let nightmare = (playerdata.nightmare as f64 * 1 as f64/30 as f64).floor() as isize;
-    let phosani_nightmare = (playerdata.phosani_nightmare as f64 * 1 as f64/7 as f64).floor() as isize;
-    let obor = (playerdata.obor as f64 * 0.5).floor() as isize;
-    let phantom_muspah = (playerdata.phantom_muspah as f64 * 1 as f64/25 as f64).floor() as isize;
-    let sarachnis = (playerdata.sarachnis as f64 * 1 as f64/80 as f64).floor() as isize;
-    let scorpia = (playerdata.scorpia as f64 * 1 as f64/130 as f64).floor() as isize;
-    let skotizo = (playerdata.skotizo as f64 * 1 as f64/45 as f64).floor() as isize;
-    let spindel = (playerdata.spindel as f64 * 1 as f64/55 as f64).floor() as isize;
-    let tempoross = (playerdata.tempoross as f64 * 0.06).floor() as isize;
-    let gauntlet = (playerdata.gauntlet as f64 * 1 as f64/10 as f64).floor() as isize;
-    let corrupted_gauntlet = (playerdata.corrupted_gauntlet as f64 * 1 as f64/7 as f64).floor() as isize;
-    let leviathan = (playerdata.leviathan as f64 * 1 as f64/30 as f64).floor() as isize;
-    let whisperer = (playerdata.whisperer as f64 * 1 as f64/21 as f64).floor() as isize;
-    let tob = (playerdata.tob as f64 * 1 as f64/3 as f64).floor() as isize;
-    let tob_hard_mode = (playerdata.tob_hard_mode as f64 * 1 as f64/3 as f64).floor() as isize;
-    let thermy = (playerdata.thermy as f64 * 1 as f64/125 as f64).floor() as isize;
-    let toa = (playerdata.toa as f64 * 1 as f64/3.5 as f64).floor() as isize;
-    let toa_expert_mode = (playerdata.toa_expert_mode as f64 * 1 as f64/3 as f64).floor() as isize;
-    let tzkal_zuk = (playerdata.tzkal_zuk as f64 * 1 as f64/0.8 as f64).floor() as isize;
-    let tztok_jad = (playerdata.tztok_jad as f64 * 1 as f64/2 as f64).floor() as isize;
-    let vardorvis = (playerdata.vardorvis as f64 * 1 as f64/37 as f64).floor() as isize;
-    let venenatis = (playerdata.venenatis as f64 * 1 as f64/20 as f64).floor() as isize;
-    let vetion = (playerdata.vetion as f64 * 1 as f64/39 as f64).floor() as isize;
-    let vorkath = (playerdata.vorkath as f64 * 1 as f64/34 as f64).floor() as isize;
-    let wintertodt = (playerdata.wintertodt as f64 * 1 as f64/30 as f64).floor() as isize;
-    let zalcano = (playerdata.zalcano as f64 * 0.05).floor() as isize;
-    let zulrah = (playerdata.zulrah as f64 * 1 as f64/40 as f64).floor() as isize;
-
+fn get_points_from_pvm(playerdata: &ParsedHiScoresData, config: &AppConfig) -> PointsFromPVM{
+    let abyssal_sire = calc_points(playerdata.abyssal_sire, &config.abyssal_sire);
+    let alchemical_hydra = calc_points(playerdata.alchemical_hydra, &config.alchemical_hydra);
+    let artio = calc_points(playerdata.artio, &config.artio);
+    let barrows = calc_points(playerdata.barrows, &config.barrows);
+    let bryophyta = calc_points(playerdata.bryophyta, &config.bryophyta);
+    let callisto = calc_points(playerdata.callisto, &config.callisto);
+    let calvarion = calc_points(playerdata.calvarion, &config.calvarion);
+    let cerberus = calc_points(playerdata.cerberus, &config.cerberus);
+    let cox = calc_points(playerdata.cox, &config.cox);
+    let cox_cm = calc_points(playerdata.cox_cm, &config.cox_cm);
+    let chaos_elemental = calc_points(playerdata.chaos_elemental, &config.chaos_elemental);
+    let chaos_fanatic = calc_points(playerdata.chaos_fanatic, &config.chaos_fanatic);
+    let commander_zilyana = calc_points(playerdata.commander_zilyana, &config.commander_zilyana);
+    let corporeal_beast = calc_points(playerdata.corporeal_beast, &config.corporeal_beast);
+    let crazy_archeologist = calc_points(playerdata.crazy_archeologist, &config.crazy_archeologist);
+    let dagannoth_prime = calc_points(playerdata.dagannoth_prime, &config.dagannoth_prime);
+    let dagannoth_rex = calc_points(playerdata.dagannoth_rex, &config.dagannoth_rex);
+    let dagannoth_supreme = calc_points(playerdata.dagannoth_supreme, &config.dagannoth_supreme);
+    let deranged_archaeologist = calc_points(playerdata.deranged_archaeologist, &config.deranged_archaeologist);
+    let duke_sucellus = calc_points(playerdata.duke_sucellus, &config.duke_sucellus);
+    let general_graardor = calc_points(playerdata.general_graardor, &config.general_graardor);
+    let giant_mole = calc_points(playerdata.giant_mole, &config.giant_mole);
+    let grotesque_guardians = calc_points(playerdata.grotesque_guardians, &config.grotesque_guardians);
+    let hespori = calc_points(playerdata.hespori, &config.hespori);
+    let kalphite_queen = calc_points(playerdata.kalphite_queen, &config.kalphite_queen);
+    let king_black_dragon = calc_points(playerdata.king_black_dragon, &config.king_black_dragon);
+    let kraken = calc_points(playerdata.kraken, &config.kraken);
+    let kreearra = calc_points(playerdata.kreearra, &config.kreearra);
+    let kril_tsutsaroth = calc_points(playerdata.kril_tsutsaroth, &config.kril_tsutsaroth);
+    let mimic = calc_points(playerdata.mimic, &config.mimic);
+    let nex = calc_points(playerdata.nex, &config.nex);
+    let nightmare = calc_points(playerdata.nightmare, &config.nightmare);
+    let phosani_nightmare = calc_points(playerdata.phosani_nightmare, &config.phosani_nightmare);
+    let obor = calc_points(playerdata.obor, &config.obor);
+    let phantom_muspah = calc_points(playerdata.phantom_muspah, &config.phantom_muspah);
+    let sarachnis = calc_points(playerdata.sarachnis, &config.sarachnis);
+    let scorpia = calc_points(playerdata.scorpia, &config.scorpia);
+    let skotizo = calc_points(playerdata.skotizo, &config.skotizo);
+    let spindel = calc_points(playerdata.spindel, &config.spindel);
+    let tempoross = calc_points(playerdata.tempoross, &config.tempoross);
+    let gauntlet = calc_points(playerdata.gauntlet, &config.gauntlet);
+    let corrupted_gauntlet = calc_points(playerdata.corrupted_gauntlet, &config.corrupted_gauntlet);
+    let leviathan = calc_points(playerdata.leviathan, &config.leviathan);
+    let whisperer = calc_points(playerdata.whisperer, &config.whisperer);
+    let tob = calc_points(playerdata.tob, &config.tob);
+    let tob_hard_mode = calc_points(playerdata.tob_hard_mode, &config.tob_hard_mode);
+    let thermy = calc_points(playerdata.thermy, &config.thermy);
+    let toa = calc_points(playerdata.toa, &config.toa);
+    let toa_expert_mode = calc_points(playerdata.toa_expert_mode, &config.toa_expert_mode);
+    let tzkal_zuk = calc_points(playerdata.tzkal_zuk, &config.tzkal_zuk);
+    let tztok_jad = calc_points(playerdata.tztok_jad, &config.tztok_jad);
+    let vardorvis = calc_points(playerdata.vardorvis, &config.vardorvis);
+    let venenatis = calc_points(playerdata.venenatis, &config.venenatis);
+    let vetion = calc_points(playerdata.vetion, &config.vetion);
+    let vorkath = calc_points(playerdata.vorkath, &config.vorkath);
+    let wintertodt = calc_points(playerdata.wintertodt, &config.wintertodt);
+    let zalcano = calc_points(playerdata.zalcano, &config.zalcano);
+    let zulrah = calc_points(playerdata.zulrah, &config.zulrah);
     let total = abyssal_sire + alchemical_hydra + artio + barrows + bryophyta + callisto + calvarion +
-     cerberus + cox + cox_cm + chaos_elemental + chaos_fanatic + commander_zilyan + corporeal_beast +
+     cerberus + cox + cox_cm + chaos_elemental + chaos_fanatic + commander_zilyana + corporeal_beast +
      crazy_archeologist + dagannoth_prime + dagannoth_rex + dagannoth_supreme + deranged_archaeologist +
      duke_sucellus + general_graardor + giant_mole + grotesque_guardians + hespori + kalphite_queen +
      king_black_dragon + kraken + kreearra + kril_tsutsaroth + mimic + nex + nightmare + phosani_nightmare +
@@ -474,7 +554,7 @@ fn get_points_from_pvm(playerdata: &ParsedHiScoresData) -> PointsFromPVM{
         cox_cm: cox_cm,
         chaos_elemental: chaos_elemental,
         chaos_fanatic: chaos_fanatic,
-        commander_zilyana:commander_zilyan,
+        commander_zilyana:commander_zilyana,
         corporeal_beast: corporeal_beast,
         crazy_archeologist: crazy_archeologist,
         dagannoth_prime: dagannoth_prime,
@@ -521,7 +601,6 @@ fn get_points_from_pvm(playerdata: &ParsedHiScoresData) -> PointsFromPVM{
         zalcano: zalcano,
         zulrah: zulrah,
     }
-
 }
 
 #[allow(unused_variables)]
@@ -1409,31 +1488,50 @@ fn parse_hiscores(input:String) -> Result<ParsedHiScoresData, Error> {
     Ok(parsed_data)
 }
 
+fn read_config() -> Result<AppConfig, Box<dyn std::error::Error>> {
+    let file_path = "config/config.json";
+
+    let mut file = File::open(file_path)?;
+    let mut config_json = String::new();
+    file.read_to_string(&mut config_json)?;
+
+    // Deserialize the JSON into your configuration struct
+    let config: AppConfig = serde_json::from_str(&config_json)?;
+
+    Ok(config)
+}
 
 #[tokio::main]
 async fn main() -> Result<(), Error> {
-    let args: Vec<String> = env::args().collect();
-    let mut username: &str;
+    // Open and read the configuration file
+    let config = read_config().unwrap();
 
-    if args.len() > 1 {
-        username = &args[1];
-    } else {
-        username = "Letharg";
+
+    //set usernames
+    //let usernames = ["letharg", "bobballistic", "maccaroni", "I_M_Maarten", "preau", "Metalrule280", "Avusten", "Kepp"];
+    let usernames = ["letharg"];
+
+    //get score for each username
+    for username in usernames{
+        //retrieve hiscore information from osrs API
+        let hiscores = get_hiscores(username).await.unwrap();
+        
+        //parse the hiscore information
+        let parsed_data = parse_hiscores(hiscores).unwrap();
+
+        //calculate the points from this parsed data.
+        let points_from_skills = get_points_from_skills(&parsed_data, &config);
+        let points_from_activities = get_points_from_activities(&parsed_data, &config);
+        let points_from_pvm = get_points_from_pvm(&parsed_data, &config);
+        let total_points = points_from_skills.overall + points_from_activities.total + points_from_pvm.total;
+        
+        //print results
+        println!("=== {} ===", username);
+        println!("total points: {}, from skills: {}, from activities: {}, from pvm: {}", total_points, points_from_skills.overall, points_from_activities.total, points_from_pvm.total);
+        println!("Detailed: ");
+        println!("=== Skills: {:?}", points_from_skills);
+        println!("=== Activities: {:?} ", points_from_activities);
+        println!("=== PVM: {:?}", points_from_pvm);
     }
-
-    let hiscores = get_hiscores(username).await.unwrap();
-    
-    let parsed_data = parse_hiscores(hiscores).unwrap();
-    let points_from_skills = get_points_from_skills(&parsed_data);
-    let points_from_activities = get_points_from_activities(&parsed_data);
-    let points_from_pvm = get_points_from_pvm(&parsed_data);
-    let total_points = points_from_skills.overall + points_from_activities.total + points_from_pvm.total;
-    
-    println!("=== {} ===", username);
-    println!("total points: {}, from skills: {}, from activities: {}, from pvm: {}", total_points, points_from_skills.overall, points_from_activities.total, points_from_pvm.total);
-    println!("Detailed: ");
-    println!("=== Skills: {:?}", points_from_skills);
-    println!("=== Activities: {:?} ", points_from_activities);
-    println!("=== PVM: {:?}", points_from_pvm);
     Ok(())
 } 
