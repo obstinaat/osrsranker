@@ -5,6 +5,8 @@ use std::fs::File;
 use std::io::Read;
 use serde_json;
 use serde::Deserialize;
+use colored::Colorize;
+use std::iter;
 
 const URL_BASE: &str = "https://secure.runescape.com/m=hiscore_oldschool/index_lite.ws?player=";
 
@@ -423,7 +425,7 @@ fn get_points_from_skills(playerdata: &ParsedHiScoresData, config: &AppConfig) -
         runecrafting: runecrafting,
         hunter: hunter,
         construction: construction,
-    }
+    } 
 }
 
 fn get_points_from_activities(playerdata: &ParsedHiScoresData, config: &AppConfig) -> PointsFromActivities{
@@ -1501,6 +1503,7 @@ fn read_config() -> Result<AppConfig, Box<dyn std::error::Error>> {
     Ok(config)
 }
 
+
 #[tokio::main]
 async fn main() -> Result<(), Error> {
     // Open and read the configuration file
@@ -1509,7 +1512,7 @@ async fn main() -> Result<(), Error> {
 
     //set usernames
     //let usernames = ["letharg", "bobballistic", "maccaroni", "I_M_Maarten", "preau", "Metalrule280", "Avusten", "Kepp"];
-    let usernames = ["letharg"];
+    let usernames = ["Maccaroni"];
 
     //get score for each username
     for username in usernames{
@@ -1525,8 +1528,17 @@ async fn main() -> Result<(), Error> {
         let points_from_pvm = get_points_from_pvm(&parsed_data, &config);
         let total_points = points_from_skills.overall + points_from_activities.total + points_from_pvm.total;
         
+        let TOTAL_CHARS = 60;
+        let chars_from_skills = points_from_skills.overall  / 50;
+        let chars_from_activities = points_from_activities.total / 50;
+        let chars_from_pvm = points_from_pvm.total / 50;
+
+
         //print results
-        println!("=== {} ===", username);
+        println!("=== {} === [{} {} {}]", username,  
+            iter::repeat('=').take(chars_from_skills as usize).collect::<String>().green(),
+            iter::repeat('=').take(chars_from_activities as usize).collect::<String>().yellow(),
+            iter::repeat('=').take(chars_from_pvm as usize).collect::<String>().red());
         println!("total points: {}, from skills: {}, from activities: {}, from pvm: {}", total_points, points_from_skills.overall, points_from_activities.total, points_from_pvm.total);
         println!("Detailed: ");
         println!("=== Skills: {:?}", points_from_skills);
