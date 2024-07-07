@@ -92,13 +92,20 @@ async fn main() -> Result<(), Error> {
     // Open and read the configuration file
     let config = read_config().unwrap();
 
-    let username= "Letharg";
+    let args: Vec<String> = env::args().collect();
+    let mut username: &str;
+
+    if args.len() > 1 {
+        username = &args[1];
+    } else {
+        username = "Letharg";
+    }
+
     let hiscoresstring = get_hiscores(username).await.unwrap();
     let mut hiscoreslines = hiscoresstring.lines();
 
     let mut player_points = EvaluatedHiscores{categories: Vec::new(), points: 0};
 
-    println!("123123 {:?}", config);
     for hiscore_category in &config.0{
         let mut evaluated_category:EvaluatedCategory = EvaluatedCategory { name: hiscore_category.name.to_string(), evaluated_entries: Vec::new(), points: 0 };
         for entry in &hiscore_category.entries{
@@ -118,7 +125,6 @@ async fn main() -> Result<(), Error> {
                 score = level;
             }
 
-            println!("{:?}", score);
             let points = calc_points(score, &entry.milestones);
             let evaluated_entry = EvaluatedEntry{name: name.to_string(),score,points};
             evaluated_category.points+=evaluated_entry.points;
